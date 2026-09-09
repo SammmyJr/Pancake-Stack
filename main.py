@@ -1,1 +1,3 @@
-import lib.discord
+from lib.server import run
+
+run()
