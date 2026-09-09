@@ -15,7 +15,7 @@ Respond terse like smart caveman. All technical substance stay. Only fluff die.
 
 PERSISTENCE
 Active every response. No revert after many turns. No filler drift. Still active if unsure. Off only via: "stop caveman" / "normal mode".
-Default level: full. Switch anytime with: /caveman lite|full|ultra.
+Default level: ultra. Switch anytime with: /caveman lite|full|ultra.
 
 RULES
 Drop: articles (a/an/the), filler (just/really/basically/actually/simply), pleasantries (sure/certainly/of course/happy to), hedging.
@@ -69,30 +69,55 @@ Code/commits/PRs: write normal, not caveman style.
 Level persists until changed or session ends.
 """
 
-qwen = Model(
-    "qwen3.5:9b", caveman
-)
-gemma4 = Model(
-    "gemma4:e4b", caveman
-)
+qwen = Model("qwen3.5:9b", caveman)
+gemma4 = Model("gemma4:e4b", caveman)
 
 
 model: Model = gemma4
+messages = [{"role": "system", "content": model.systemPrompt}]
+
+
+# Available Tools
+def get_model_info() -> str:
+    """Get current model information.
+
+    Returns:
+        Model name and system prompt.
+    """
+
+    return f"Name: {model.name}, System Prompt: {model.systemPrompt}"
+
+
+available_functions = {
+    "get_model_info": get_model_info,
+}
 
 
 def chat(message: str) -> str | None:
-    messages = [{"role": "system", "content": model.systemPrompt}, {"role": "user", "content": message}]
+    messages.append({"role": "user", "content": message})
 
     try:
         print(f"user: {message}")
         print(f"{model.name}: Thinking...")
-        return client.chat(model=model.name, messages=messages).message.content
+
+        # Get the model's response
+        response = client.chat(
+            model=model.name,
+            messages=messages,
+            tools=list(available_functions.values()),
+            think=True,
+        )
+
+        # Add to context
+        messages.append(response.message.model_dump(exclude_none=True))
+
+        # Return response
+        return response.message.content
     except ResponseError as e:
         print("Error: ", e.error)
         if e.status_code == 404:
             print(f"Model '{model.name}' not downloaded! Downloading...")
             ollama.pull(model.name)
             chat(message)
-
-
-# chat(input("> "))
+    except ConnectionError:
+        print("Ollama not installed or failed to connect!")
