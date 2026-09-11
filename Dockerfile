@@ -6,6 +6,7 @@ ADD main.py /app
 ADD .env /app
 
 RUN apt-get update -y
+RUN apt-get install zstd
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
 COPY requirements.txt requirements.txt
