@@ -1,6 +1,8 @@
+import asyncio
 import os
 from dotenv import load_dotenv
 import discord
+from discord.ext import commands
 from .model import chat
 
 load_dotenv()
@@ -10,29 +12,36 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.dm_messages = True
 
-client = discord.Client(intents=intents)
+bot = commands.Bot(intents=intents, command_prefix="!")
 
 
-@client.event
+@bot.event
 async def on_ready():
-    print(f"Logged in as {client.user}")
+    await bot.tree.sync()
+    print(f"Logged in as {bot.user}")
 
 
-@client.event
+@bot.event
 async def on_message(message):
     # ignore the bot's own messages
-    if message.author == client.user:
+    if message.author == bot.user:
         return
 
     # message.guild is None for DMs
     if message.guild is None:
-        response = chat(message.content)
+        response = await asyncio.to_thread(chat, message.content)
         if response:
             await message.channel.send(response)
 
 
+@bot.tree.command(name="ping", description="Responds with a pong!")
+async def ping(interaction: discord.Interaction):
+    # Always respond using interaction.response.send_message
+    await interaction.response.send_message("Pong! 🏓")
+
+
 def run():
     if token:
-        client.run(token)
+        bot.run(token)
     else:
         print("Missing 'DISCORD_TOKEN' in .env!")

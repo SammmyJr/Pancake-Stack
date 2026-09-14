@@ -1,7 +1,12 @@
 import ollama
 from ollama import ResponseError
+import os
+from dotenv import load_dotenv
 
-client = ollama.Client()
+load_dotenv()
+host = os.getenv("OLLAMA_HOST")
+
+client = ollama.Client(host=host)
 
 
 class Model:
@@ -115,9 +120,9 @@ def chat(message: str) -> str | None:
         return response.message.content
     except ResponseError as e:
         print("Error: ", e.error)
-        if e.status_code == 404:
-            print(f"Model '{model.name}' not downloaded! Downloading...")
-            ollama.pull(model.name)
-            chat(message)
     except ConnectionError:
         print("Ollama not installed or failed to connect!")
+
+
+def download_model(tag: str) -> None:
+    ollama.pull(tag)
