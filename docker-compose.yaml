@@ -3,7 +3,7 @@ services:
     image: ollama/ollama:latest
     container_name: ollama
     ports:
-      - "11434:11434"
+      - "11435:11435"
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
@@ -26,12 +26,15 @@ services:
     build: ./app/
     env_file:
       - .env
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     container_name: pancake
     depends_on:
       ollama:
         condition: service_healthy
     environment:
-      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_HOST=http://ollama:11435
     volumes:
       - ./app:/pancake
     restart: unless-stopped
