@@ -34,7 +34,7 @@ services:
       ollama:
         condition: service_healthy
     environment:
-      - OLLAMA_HOST=http://ollama:11435
+      - OLLAMA_HOST=http://ollama:11434
     volumes:
       - ./app:/pancake
     restart: unless-stopped

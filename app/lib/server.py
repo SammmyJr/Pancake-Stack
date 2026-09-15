@@ -29,9 +29,10 @@ async def on_message(message):
 
     # message.guild is None for DMs
     if message.guild is None:
+        ctx = await message.channel.send("Thinking...")
         response = await asyncio.to_thread(chat, message.content)
         if response:
-            await message.channel.send(response)
+            await ctx.edit(content=response)
 
 
 @bot.tree.command(name="ping", description="Responds with a pong!")
