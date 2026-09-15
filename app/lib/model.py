@@ -66,6 +66,8 @@ available_functions: dict[str, Callable] = {
 available_functions.update(shoppingFunctions)
 available_functions.update(weatherFunctions)
 
+MAX_TOOL_ROUNDS = 5
+
 
 def chat(message: str) -> str | None:
     messages.append({"role": "user", "content": message})
@@ -74,35 +76,46 @@ def chat(message: str) -> str | None:
         logger.info(f"user: {message}")
         logger.info(f"{model.name}: Thinking...")
 
-        # Get the model's response
-        response = client.chat(
-            model=model.name,
-            messages=messages,
-            tools=list(available_functions.values()),
-            think=True,
-        )
+        response = None
 
-        # Add to context
-        messages.append(response.message.model_dump(exclude_none=True))
-
-        tool_calls = response.message.tool_calls or []
-
-        for call in tool_calls:
-            name = call.function.name
-            args = call.function.arguments or {}
-            func = available_functions.get(name)
-            try:
-                result = func(**args) if func else f"Unknown tool: {name}"
-                logger.info(f"Calling tool '{name}' with args '{args}'")
-            except Exception as e:
-                result = f"Error calling {name}: {e}"
-            messages.append(
-                {
-                    "role": "tool",
-                    "content": str(result),
-                    "tool_name": name,
-                }
+        for _ in range(MAX_TOOL_ROUNDS):
+            # Send full history (incl. prior tool results) back to the model
+            response = client.chat(
+                model=model.name,
+                messages=messages,
+                tools=list(available_functions.values()),
+                think=True,
             )
+
+            # Add to context
+            messages.append(response.message.model_dump(exclude_none=True))
+
+            tool_calls = response.message.tool_calls or []
+            if not tool_calls:
+                break  # real answer, done
+
+            for call in tool_calls:
+                name = call.function.name
+                args = call.function.arguments or {}
+                func = available_functions.get(name)
+                try:
+                    result = func(**args) if func else f"Unknown tool: {name}"
+                    logger.info(f"Calling tool '{name}' with args '{args}'")
+                except Exception as e:
+                    result = f"Error calling {name}: {e}"
+                messages.append(
+                    {
+                        "role": "tool",
+                        "content": str(result),
+                        "tool_name": name,
+                    }
+                )
+
+        if response is None:
+            return None
+
+        if response.message.tool_calls:
+            logger.warning("Tool call limit hit, no final answer produced")
 
         # Return response
         return response.message.content

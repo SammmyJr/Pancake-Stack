@@ -1,7 +1,27 @@
 from typing import Callable
+from pathlib import Path
+
+script_dir = Path(__file__).resolve().parent
 
 
-shopping = ["bread", "butter", "eggs"]
+# Load the shopping list file, otherwise create one
+def loadShoppingList() -> list:
+
+    try:
+        with open(script_dir / "memory/shopping_list.txt", "r") as file:
+            return file.readlines()
+    except FileNotFoundError:
+        open(script_dir / "memory/shopping_list.txt", "x")
+        return loadShoppingList()
+
+
+def saveShoppingList(shopping: list) -> None:
+    with open(script_dir / "memory/shopping_list.txt", "w") as file:
+        for item in shopping:
+            file.writelines(f"{item}\n")
+
+
+shopping = loadShoppingList()
 
 
 def get_shopping_list() -> list:
@@ -22,6 +42,7 @@ def add_item_shopping_list(item: str) -> None:
     """
 
     shopping.append(item)
+    saveShoppingList(shopping)
 
 
 def remove_item_shopping_list(item: str) -> None:
@@ -32,6 +53,7 @@ def remove_item_shopping_list(item: str) -> None:
     """
 
     shopping.remove(item)
+    saveShoppingList(shopping)
 
 
 shoppingFunctions: dict[str, Callable] = {
