@@ -29,7 +29,7 @@ async def on_message(message):
 
     # message.guild is None for DMs
     if message.guild is None:
-        ctx = await message.channel.send("Thinking...")
+        ctx = await message.channel.send("⏳ *Thinking* ⌛")
         response = await asyncio.to_thread(chat, message.content)
         if response:
             await ctx.edit(content=response)
