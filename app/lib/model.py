@@ -7,6 +7,7 @@ from .tools.shopping import shoppingFunctions
 from .tools.weather import weatherFunctions
 import logging
 import sys
+from pathlib import Path
 
 load_dotenv()
 host = os.getenv("OLLAMA_HOST")
@@ -28,8 +29,10 @@ class Model:
 
 
 def loadSystemPromptFromFile() -> str:
+    script_dir = Path(__file__).resolve().parent
+
     try:
-        with open("system_prompt.txt", "r") as file:
+        with open(script_dir / "system_prompt.txt") as file:
             return file.read()
     except FileNotFoundError:
         print("System prompt file not found, using empty system prompt")
