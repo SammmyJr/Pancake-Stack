@@ -35,12 +35,6 @@ async def on_message(message):
             await ctx.edit(content=response)
 
 
-@bot.tree.command(name="ping", description="Responds with a pong!")
-async def ping(interaction: discord.Interaction):
-    # Always respond using interaction.response.send_message
-    await interaction.response.send_message("Pong! 🏓")
-
-
 def run():
     if token:
         bot.run(token)
