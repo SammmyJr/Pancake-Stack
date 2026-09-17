@@ -29,10 +29,12 @@ async def on_message(message):
 
     # message.guild is None for DMs
     if message.guild is None:
-        ctx = await message.channel.send("⏳ Thinking...")
+        statusMessage = await message.channel.send("⏳ Thinking...")
         response = await asyncio.to_thread(chat, message.content)
         if response:
-            await ctx.edit(content=response)
+            # Delete status message, send the model's response
+            await statusMessage.delete()
+            await message.channel.send(response)
 
 
 def run():
