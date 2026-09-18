@@ -1,4 +1,5 @@
-from typing import Callable
+from typing import Callable, Mapping
+from discord import Message
 import ollama
 from ollama import ResponseError
 import os
@@ -28,6 +29,7 @@ class Model:
         self.systemPrompt = _systemPrompt
 
 
+# load a system prompt from the 'system_prompt.txt' file, return it
 def loadSystemPromptFromFile() -> str:
     script_dir = Path(__file__).resolve().parent
 
@@ -44,6 +46,8 @@ system = loadSystemPromptFromFile()
 # qwen = Model("qwen3.5:9b", system)
 gemma4 = Model("gemma4:e4b", system)
 
+# init model
+# TODO: Pull message from memory, rather than recreate on run.
 model: Model = gemma4
 messages = [{"role": "system", "content": model.systemPrompt}]
 
@@ -59,6 +63,8 @@ def get_model_info() -> str:
     return f"Name: {model.name}, System Prompt: {model.systemPrompt}"
 
 
+# load available functions into the model
+# TODO: Add a proper tool loader function.
 available_functions: dict[str, Callable] = {
     "get_model_info": get_model_info,
 }
@@ -69,7 +75,14 @@ available_functions.update(weatherFunctions)
 MAX_TOOL_ROUNDS = 5
 
 
-def chat(message: str) -> str | None:
+# Add a tool call message
+async def add_toolcall(name: str, args: Mapping, statusMessage: Message) -> None:
+    status = statusMessage.content + f"\n🛠️ Called tool '{name}' with args: {args}"
+    await statusMessage.edit(content=status)
+
+
+# Chat with the model, use tool calls if needed, return a response.
+async def chat(message: str, statusMessage: Message) -> str | None:
     messages.append({"role": "user", "content": message})
 
     try:
@@ -101,6 +114,7 @@ def chat(message: str) -> str | None:
                 try:
                     result = func(**args) if func else f"Unknown tool: {name}"
                     logger.info(f"Calling tool '{name}' with args '{args}'")
+                    await add_toolcall(name, args, statusMessage)
                 except Exception as e:
                     result = f"Error calling {name}: {e}"
                 messages.append(

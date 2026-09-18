@@ -1,4 +1,3 @@
-import asyncio
 import os
 from dotenv import load_dotenv
 import discord
@@ -15,12 +14,14 @@ intents.dm_messages = True
 bot = commands.Bot(intents=intents, command_prefix="!")
 
 
+# runs on client connect
 @bot.event
 async def on_ready():
     await bot.tree.sync()
     print(f"Logged in as {bot.user}")
 
 
+# runs on message recieved
 @bot.event
 async def on_message(message):
     # ignore the bot's own messages
@@ -30,9 +31,11 @@ async def on_message(message):
     # message.guild is None for DMs
     if message.guild is None:
         statusMessage = await message.channel.send("⏳ Thinking...")
-        response = await asyncio.to_thread(chat, message.content)
+
+        # get response from model
+        response = await chat(message.content, statusMessage)
         if response:
-            # Delete status message, send the model's response
+            # delete status and tool call messages, send the model's response
             await statusMessage.delete()
             await message.channel.send(response)
 
