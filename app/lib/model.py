@@ -4,7 +4,7 @@ import ollama
 from ollama import ResponseError
 import os
 from dotenv import load_dotenv
-from .tools.shopping import shoppingFunctions
+from .tools.list import listFunctions
 from .tools.weather import weatherFunctions
 import logging
 import sys
@@ -69,7 +69,7 @@ available_functions: dict[str, Callable] = {
     "get_model_info": get_model_info,
 }
 
-available_functions.update(shoppingFunctions)
+available_functions.update(listFunctions)
 available_functions.update(weatherFunctions)
 
 MAX_TOOL_ROUNDS = 5
@@ -82,6 +82,7 @@ async def add_toolcall(name: str, args: Mapping, statusMessage: Message) -> None
 
 
 # Chat with the model, use tool calls if needed, return a response.
+# TODO: Stream output to Discord via editing messages?
 async def chat(message: str, statusMessage: Message) -> str | None:
     messages.append({"role": "user", "content": message})
 
