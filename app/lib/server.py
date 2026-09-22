@@ -46,14 +46,14 @@ async def on_message(message):
 
 
 async def respond(message: discord.Message):
-    statusMessage = await message.reply("⏳ Thinking...")
+    statusMessage = await message.reply("⏳ Thinking...", mention_author=False)
 
     # get response from model
     response = await chat(message.content, statusMessage)
     if response:
         # delete status and tool call messages, send the model's response
         await statusMessage.delete()
-        await message.channel.send(response)
+        await message.reply(response, mention_author=True)
 
 
 def run():
