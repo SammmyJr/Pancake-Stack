@@ -1,25 +1,26 @@
 from typing import Callable
 from pathlib import Path
 import json
+import os
 
 script_dir = Path(__file__).resolve().parent
 
 
 # Load the shopping list file, otherwise create one
 def loadLists() -> dict:
-
     try:
         with open(script_dir / "memory/lists.json", "r") as file:
             return json.loads(file.read())
-    except FileNotFoundError:
-        with open(script_dir / "memory/lists.json", "w") as newFile:
-            newFile.write(json.dumps({}))
-        return loadLists()
+    except (FileNotFoundError, json.JSONDecodeError):
+        Path(script_dir / "memory/lists.json").write_text(json.dumps({}))
+        return {}
 
 
 def saveLists(lists: dict) -> None:
-    with open(script_dir / "memory/lists.json", "w") as file:
-        file.write(json.dumps(lists))
+    with open(script_dir / "memory/lists.json.temp", "w") as tempFile:
+        tempFile.write(json.dumps(lists))
+
+    os.replace(script_dir / "memory/lists.json.temp", script_dir / "memory/lists.json")
 
 
 lists = loadLists()
@@ -89,7 +90,7 @@ def remove_from_list(name: str, item: str):
 
 listFunctions: dict[str, Callable] = {
     "get_all_lists": get_all_lists,
-    "create_lists": create_list,
+    "create_list": create_list,
     "remove_list": remove_list,
     "add_to_list": add_to_list,
     "remove_from_list": remove_from_list,
